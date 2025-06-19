@@ -1,4 +1,4 @@
-<p align="center"><img src="/art/logo.svg" alt="Logo Laravel Cashier Iyzico"></p>
+<p align="center"><img width="355" height="62" src="/art/logo.svg" alt="Logo Laravel Cashier Iyzico"></p>
 
 ## Introduction
 

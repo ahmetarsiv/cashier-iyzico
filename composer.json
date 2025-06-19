@@ -1,0 +1,57 @@
+{
+    "name": "codenteq/cashier-iyzico",
+    "type": "package",
+    "description": "Laravel Cashier provides an expressive, fluent interface to Iyzico's subscription billing services.",
+    "keywords": [
+        "laravel",
+        "iyzico",
+        "billing"
+    ],
+    "license": "MIT",
+    "homepage": "https://codenteq.com",
+    "authors": [
+        {
+            "name": "Ahmet Sefa Arşiv",
+            "email": "ahmetarsivpm@gmail.com",
+            "homepage": "https://github.com/ahmetarsiv",
+            "role": "Developer"
+        },
+        {
+            "name": "Ali Karabay",
+            "email": "alikarabay77@gmail.com",
+            "homepage": "https://github.com/karabayyazilim",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "source": "https://github.com/codenteq/cashier-iyzico",
+        "issues": "https://github.com/codenteq/cashier-iyzico/issues",
+        "email": "info@codenteq.com"
+    },
+    "require": {
+        "iyzico/iyzipay-php": "^2.0"
+    },
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/codenteq"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Laravel\\Cashier\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Laravel\\Cashier\\CashierServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}
