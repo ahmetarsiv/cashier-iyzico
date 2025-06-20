@@ -9,7 +9,7 @@ use Iyzipay\Model\Subscription\SubscriptionCreate;
 use Iyzipay\Request\Subscription\SubscriptionCreateRequest;
 use Iyzipay\Options;
 
-class IyzicoSubscriptionService
+class SubscriptionService
 {
     protected Options $options;
 
@@ -27,7 +27,7 @@ class IyzicoSubscriptionService
     public function createSubscription(array $data): SubscriptionCreate
     {
         $request = new SubscriptionCreateRequest();
-        $request->setLocale("tr");
+        $request->setLocale(\Iyzipay\Model\Locale::TR);
         $request->setConversationId($data['conversation_id']);
         $request->setPricingPlanReferenceCode($data['pricing_plan_reference_code']);
         $request->setSubscriptionInitialStatus("ACTIVE");
@@ -43,19 +43,29 @@ class IyzicoSubscriptionService
         $billingAddress->setContactName($data['customer']['billingAddress']['contactName']);
         $billingAddress->setCity($data['customer']['billingAddress']['city']);
         $billingAddress->setCountry($data['customer']['billingAddress']['country']);
+        $billingAddress->setAddress($data['customer']['billingAddress']['address']);
+        $billingAddress->setZipCode($data['customer']['billingAddress']['zipCode']);
         $customer->setBillingAddress($billingAddress);
 
         $shippingAddress = new Address();
         $shippingAddress->setContactName($data['customer']['shippingAddress']['contactName']);
         $shippingAddress->setCity($data['customer']['shippingAddress']['city']);
         $shippingAddress->setCountry($data['customer']['shippingAddress']['country']);
+        $shippingAddress->setAddress($data['customer']['shippingAddress']['address']);
+        $shippingAddress->setZipCode($data['customer']['shippingAddress']['zipCode']);
         $customer->setShippingAddress($shippingAddress);
 
-        $paymentCard = new PaymentCard();
-        $paymentCard->setRegisterConsumerCard(false);
-        $customer->setShippingAddress($paymentCard);
-
         $request->setCustomer($customer);
+
+        $paymentCard = new PaymentCard();
+        $paymentCard->setCardHolderName($data['card']['cardHolderName']);
+        $paymentCard->setCardNumber($data['card']['cardNumber']);
+        $paymentCard->setExpireMonth($data['card']['expireMonth']);
+        $paymentCard->setExpireYear($data['card']['expireYear']);
+        $paymentCard->setCvc($data['card']['cvc']);
+        $paymentCard->setRegisterConsumerCard(true);
+
+        $request->setPaymentCard($paymentCard);
 
         return SubscriptionCreate::create($request, $this->options);
     }
