@@ -39,13 +39,13 @@
     ],
     "autoload": {
         "psr-4": {
-            "Laravel\\Cashier\\": "src"
+            "Codenteq\\Iyzico\\": "src"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Laravel\\Cashier\\CashierServiceProvider"
+                "Codenteq\\Iyzico\\CashierServiceProvider"
             ],
             "aliases": {}
         }

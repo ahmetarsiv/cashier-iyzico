@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Cashier;
+namespace Codenteq\Iyzico;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -8,25 +8,26 @@ class CashierServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/config/cashier-iyzico.php', 'cashier-iyzico');
+        $this->mergeConfigFrom(__DIR__.'/../config/cashier.php', 'cashier');
     }
 
     public function boot(): void
     {
-        // Publish config
-        $this->publishes([
-            __DIR__.'/config/cashier-iyzico.php' => config_path('cashier-iyzico.php'),
-        ], 'cashier-iyzico-config');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'cashier');
 
-        // Publish migrations
-        $this->publishes([
-            __DIR__.'/database/migrations/' => database_path('migrations'),
-        ], 'cashier-iyzico-migrations');
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/cashier.php' => config_path('cashier.php'),
+            ], 'cashier-config');
 
-        // Load routes
-        $this->loadRoutesFrom(__DIR__.'/routes/web.php');
+            $this->publishes([
+                __DIR__.'/../database/migrations' => database_path('migrations'),
+            ], 'cashier-migrations');
 
-        // Load migrations
-        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+            $this->publishes([
+                __DIR__.'/../resources/views' => resource_path('views/vendor/cashier'),
+            ], 'cashier-views');
+        }
     }
 }

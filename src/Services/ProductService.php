@@ -1,10 +1,11 @@
 <?php
 
-namespace Laravel\Cashier\Services;
+namespace Codenteq\Iyzico\Services;
 
 use Iyzipay\Model\Subscription\SubscriptionProduct;
 use Iyzipay\Request\Subscription\SubscriptionCreateProductRequest;
 use Iyzipay\Options;
+use Iyzipay\Request\Subscription\SubscriptionUpdateProductRequest;
 
 class ProductService
 {
@@ -21,14 +22,8 @@ class ProductService
     /**
      * Create a product in Iyzico
      */
-    public function createProduct(string $name, string $description): SubscriptionProduct
+    public function create(SubscriptionCreateProductRequest $request): SubscriptionProduct
     {
-        $request = new SubscriptionCreateProductRequest();
-        $request->setLocale(\Iyzipay\Model\Locale::TR);
-        $request->setConversationId(\Illuminate\Support\Str::uuid());
-        $request->setName($name);
-        $request->setDescription($description);
-
         return SubscriptionProduct::create($request, $this->options);
     }
 }

@@ -1,146 +1,85 @@
 <?php
 
-namespace Laravel\Cashier\Models;
+namespace Codenteq\Iyzico\Models;
 
+use Carbon\Carbon;
+use Codenteq\Iyzico\Cashier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subscription extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'type',
-        'plan_id',
-        'iyzico_reference',
-        'iyzico_product_reference',
-        'status',
-        'trial_ends_at',
-        'ends_at',
-        'current_period_start',
-        'current_period_end',
-    ];
+    protected $guarded = [];
 
     protected $casts = [
+        'quantity' => 'integer',
         'trial_ends_at' => 'datetime',
         'ends_at' => 'datetime',
-        'current_period_start' => 'datetime',
-        'current_period_end' => 'datetime',
     ];
 
-    /**
-     * Get the user that owns the subscription.
-     */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model'));
+        return $this->owner();
     }
 
-    /**
-     * Check if the subscription is currently active.
-     */
-    public function isActive(): bool
+    public function owner(): BelongsTo
     {
-        return $this->status === 'active' &&
-            (is_null($this->ends_at) || $this->ends_at->isFuture());
+        $model = config('cashier.model', config('auth.providers.users.model', 'App\\Models\\User'));
+
+        return $this->belongsTo($model, 'user_id');
     }
 
-    /**
-     * Check if the subscription is on trial.
-     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(Cashier::$subscriptionItemModel, 'subscription_id');
+    }
+
+    public function valid(): bool
+    {
+        return $this->active() || $this->onTrial() || $this->onGracePeriod();
+    }
+
+    public function active(): bool
+    {
+        return (is_null($this->ends_at) || $this->onGracePeriod()) &&
+            (!$this->onTrial() || $this->trial_ends_at->isFuture()) &&
+            $this->iyzico_status === 'active';
+    }
+
+    public function cancelled(): bool
+    {
+        return !is_null($this->ends_at);
+    }
+
     public function onTrial(): bool
     {
-        return !is_null($this->trial_ends_at) && $this->trial_ends_at->isFuture();
+        return $this->trial_ends_at && $this->trial_ends_at->isFuture();
     }
 
-    /**
-     * Check if the subscription is canceled.
-     */
-    public function canceled(): bool
+    public function onGracePeriod(): bool
     {
-        return $this->status === 'canceled';
+        return $this->ends_at && $this->ends_at->isFuture();
     }
 
-    /**
-     * Check if the subscription is expired.
-     */
-    public function expired(): bool
-    {
-        return $this->status === 'expired' ||
-            (!is_null($this->ends_at) && $this->ends_at->isPast());
-    }
-
-    /**
-     * Check if the subscription is past due.
-     */
-    public function pastDue(): bool
-    {
-        return $this->status === 'past_due';
-    }
-
-    /**
-     * Get the subscription's remaining trial days.
-     */
-    public function trialDaysRemaining(): int
-    {
-        if (!$this->onTrial()) {
-            return 0;
-        }
-
-        return $this->trial_ends_at->diffInDays(now());
-    }
-
-    /**
-     * Mark the subscription as canceled.
-     */
     public function cancel(): self
     {
-        $this->update([
-            'status' => 'canceled',
-            'ends_at' => now(),
-        ]);
+        $this->ends_at = $this->onTrial() ? $this->trial_ends_at : $this->ends_at ?? now();
+        $this->save();
 
         return $this;
     }
 
-    /**
-     * Resume a canceled subscription.
-     */
     public function resume(): self
     {
-        $this->update([
-            'status' => 'active',
-            'ends_at' => null,
-        ]);
+        $this->ends_at = null;
+        $this->save();
 
         return $this;
     }
 
-    /**
-     * Scope to only include active subscriptions.
-     */
-    public function scopeActive($query)
+    public function hasPlan(string $plan): bool
     {
-        return $query->where('status', 'active')
-            ->where(function ($query) {
-                $query->whereNull('ends_at')
-                    ->orWhere('ends_at', '>', now());
-            });
-    }
-
-    /**
-     * Scope to only include canceled subscriptions.
-     */
-    public function scopeCanceled($query)
-    {
-        return $query->where('status', 'canceled');
-    }
-
-    /**
-     * Scope to only include subscriptions on trial.
-     */
-    public function scopeOnTrial($query)
-    {
-        return $query->whereNotNull('trial_ends_at')
-            ->where('trial_ends_at', '>', now());
+        return $this->iyzico_plan === $plan;
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Cashier\Services;
+namespace Codenteq\Iyzico\Services;
 
 use Iyzipay\Model\Address;
 use Iyzipay\Model\Customer;
@@ -24,7 +24,7 @@ class SubscriptionService
     /**
      * Send subscription create request to Iyzico API.
      */
-    public function createSubscription(array $data): SubscriptionCreate
+    public function create(array $data): SubscriptionCreate
     {
         $request = new SubscriptionCreateRequest();
         $request->setLocale(\Iyzipay\Model\Locale::TR);

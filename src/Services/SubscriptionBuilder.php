@@ -1,161 +1,72 @@
 <?php
 
-namespace Laravel\Cashier\Services;
+namespace Codenteq\Iyzico;
 
-use Laravel\Cashier\Models\Subscription as SubscriptionModel;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Codenteq\Iyzico\Models\Subscription;
 
 class SubscriptionBuilder
 {
-    protected Model $user;
-    protected string $type;
-    protected string $plan;
-    protected ?string $productReferenceCode = null;
-    protected ?string $planReferenceCode = null;
-    protected bool $skipTrial = false;
+    protected $owner;
+    protected $name;
+    protected $plan;
+    protected $quantity = 1;
+    protected $trialDays = 0;
+    protected $skipTrial = false;
+    protected $metadata = [];
 
-    public function __construct(Model $user, string $type, string $plan)
+    public function __construct($owner, string $name, string $plan)
     {
-        $this->user = $user;
-        $this->type = $type;
+        $this->owner = $owner;
+        $this->name = $name;
         $this->plan = $plan;
     }
 
-    /**
-     * Skip trial period
-     */
+    public function quantity(int $quantity): self
+    {
+        $this->quantity = $quantity;
+        return $this;
+    }
+
+    public function trialDays(int $trialDays): self
+    {
+        $this->trialDays = $trialDays;
+        return $this;
+    }
+
     public function skipTrial(): self
     {
         $this->skipTrial = true;
         return $this;
     }
 
-    /**
-     * Set existing plan reference code (if plan already exists in Iyzico)
-     */
-    public function withPlanReference(string $planReferenceCode): self
+    public function create(array $options = []): Subscription
     {
-        $this->planReferenceCode = $planReferenceCode;
-        return $this;
-    }
+        $iyzicoSubscription = $this->createIyzicoSubscription($options);
 
-    /**
-     * Create the subscription using Iyzico API - Full 3-step process
-     */
-    public function create(array $customerDetails = [], array $cardDetails = [], array $planDetails = []): SubscriptionModel
-    {
-        // Step 1: Create Product (if not exists)
-        if (!$this->productReferenceCode) {
-            $this->createProduct();
-        }
-
-        // Step 2: Create Plan (if not exists)
-        if (!$this->planReferenceCode) {
-            $this->createPlan($planDetails);
-        }
-
-        // Step 3: Create Subscription
-        return $this->createSubscription($customerDetails, $cardDetails);
-    }
-
-    /**
-     * Create subscription directly (if product and plan already exist)
-     */
-    public function createDirect(array $customerDetails = [], array $cardDetails = []): SubscriptionModel
-    {
-        if (!$this->planReferenceCode) {
-            throw new \Exception('Plan reference code is required for direct subscription creation');
-        }
-
-        return $this->createSubscription($customerDetails, $cardDetails);
-    }
-
-    /**
-     * Step 1: Create Product in Iyzico
-     */
-    protected function createProduct(): void
-    {
-        $productService = new ProductService();
-
-        $response = $productService->createProduct(
-            $this->type . ' Subscription',
-            'Subscription product for ' . $this->type
-        );
-
-        if ($response->getStatus() !== 'success') {
-            throw new \Exception('İyzico product creation failed: ' . $response->getErrorMessage());
-        }
-
-        $this->productReferenceCode = $response->getReferenceCode();
-    }
-
-    /**
-     * Step 2: Create Plan in Iyzico
-     */
-    protected function createPlan(array $planDetails): void
-    {
-        if (!$this->productReferenceCode) {
-            throw new \Exception('Product must be created before plan');
-        }
-
-        $planService = new PlanService();
-
-        $planData = array_merge([
-            'product_reference_code' => $this->productReferenceCode,
-            'name' => $this->plan . ' Plan',
-            'price' => 50.0,
-            'currency_code' => 'TRY',
-            'payment_interval' => 'MONTHLY',
-            'payment_interval_count' => 1,
-            'trial_period_days' => $this->skipTrial ? 0 : 7,
-            'plan_payment_type' => 'RECURRING',
-            'recurrence_count' => null, // Unlimited
-        ], $planDetails);
-
-        $response = $planService->createPlan($planData);
-
-        if ($response->getStatus() !== 'success') {
-            throw new \Exception('İyzico plan creation failed: ' . $response->getErrorMessage());
-        }
-
-        $this->planReferenceCode = $response->getReferenceCode();
-    }
-
-    /**
-     * Step 3: Create Subscription in Iyzico
-     */
-    protected function createSubscription(array $customerDetails, array $cardDetails): SubscriptionModel
-    {
-        $service = new SubscriptionService();
-
-        $response = $service->createSubscription([
-            'conversation_id' => Str::uuid(),
-            'pricing_plan_reference_code' => $this->planReferenceCode,
-            'customer' => [
-                "name" => $customerDetails['name'],
-                "surname" => $customerDetails['surname'],
-                "email" => $this->user->email,
-                "gsmNumber" => $customerDetails['gsmNumber'],
-                "identityNumber" => $customerDetails['identityNumber'],
-                "billingAddress" => $customerDetails['billingAddress'],
-                "shippingAddress" => $customerDetails['shippingAddress'],
-            ],
-            'card' => $cardDetails,
-        ]);
-
-        if ($response->getStatus() !== 'success') {
-            throw new \Exception('İyzico subscription creation failed: ' . $response->getErrorMessage());
-        }
-
-        return SubscriptionModel::create([
-            'user_id' => $this->user->id,
-            'type' => $this->type,
-            'plan_id' => $this->planReferenceCode,
-            'iyzico_reference' => $response->getReferenceCode(),
-            'status' => 'active',
-            'trial_ends_at' => $this->skipTrial ? null : now()->addDays(7),
+        return $this->owner->subscriptions()->create([
+            'name' => $this->name,
+            'iyzico_id' => $iyzicoSubscription->getReferenceCode(),
+            'iyzico_status' => $iyzicoSubscription->getSubscriptionStatus(),
+            'iyzico_plan' => $this->plan,
+            'quantity' => $this->quantity,
+            'trial_ends_at' => $this->skipTrial ? null : $this->trialExpiration(),
             'ends_at' => null,
         ]);
+    }
+
+    protected function createIyzicoSubscription(array $options = [])
+    {
+        // İyzico SDK kullanarak abonelik oluşturma implementasyonu
+        // Bu kısım İyzico API dokümantasyonuna göre geliştirilmeli
+    }
+
+    protected function trialExpiration(): ?Carbon
+    {
+        if ($this->trialDays) {
+            return now()->addDays($this->trialDays);
+        }
+
+        return null;
     }
 }

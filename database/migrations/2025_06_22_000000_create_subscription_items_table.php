@@ -7,24 +7,20 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('subscriptions', function (Blueprint $table) {
+        Schema::create('subscription_items', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->string('name');
+            $table->unsignedBigInteger('subscription_id');
             $table->string('iyzico_id')->unique();
-            $table->string('iyzico_status');
             $table->string('iyzico_plan');
             $table->integer('quantity');
-            $table->timestamp('trial_ends_at')->nullable();
-            $table->timestamp('ends_at')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id', 'iyzico_status']);
+            $table->unique(['subscription_id', 'iyzico_plan']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('subscriptions');
+        Schema::dropIfExists('subscription_items');
     }
 };
