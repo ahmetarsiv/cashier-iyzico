@@ -6,8 +6,8 @@ body:
       value: "Please read [our full contribution guide](https://laravel.com/docs/contributions#bug-reports) before submitting bug reports. If you notice improper DocBlock, PHPStan, or IDE warnings while using Codenteq, do not create a GitHub issue. Instead, please submit a pull request to fix the problem."
   - type: input
     attributes:
-      label: Iyzico Iyzico Version
-      description: Provide the Iyzico Iyzico version that you are using.
+      label: Codenteq Iyzico Version
+      description: Provide the Codenteq Iyzico version that you are using.
       placeholder: Version
     validations:
       required: true
