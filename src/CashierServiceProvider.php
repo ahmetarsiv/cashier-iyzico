@@ -4,14 +4,6 @@ namespace Codenteq\Iyzico;
 
 use Illuminate\Support\ServiceProvider;
 
-/**
- * Laravel Cashier İyzico Service Provider
- *
- * This service provider registers all the necessary services, configurations,
- * and components required for the Laravel Cashier İyzico package.
- *
- * @package Codenteq\LaravelCashierIyzico
- */
 class CashierServiceProvider extends ServiceProvider
 {
     /**
@@ -32,7 +24,6 @@ class CashierServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'cashier');
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
         if ($this->app->runningInConsole()) {
@@ -45,8 +36,8 @@ class CashierServiceProvider extends ServiceProvider
             ], 'cashier-migrations');
 
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/cashier'),
-            ], 'cashier-views');
+                __DIR__ . '/../tests' => base_path('tests/vendor/cashier'),
+            ], 'cashier-tests');
         }
     }
 }

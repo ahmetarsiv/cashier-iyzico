@@ -4,16 +4,18 @@ namespace Codenteq\Iyzico\Models;
 
 use Carbon\Carbon;
 use Codenteq\Iyzico\Cashier;
+use Codenteq\Iyzico\Enums\SubscriptionStatusEnum;
+use Codenteq\Iyzico\Services\SubscriptionService;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subscription extends Model
 {
+    use HasUuids;
     protected $guarded = [];
 
     protected $casts = [
-        'quantity' => 'integer',
         'trial_ends_at' => 'datetime',
         'ends_at' => 'datetime',
     ];
@@ -25,14 +27,9 @@ class Subscription extends Model
 
     public function owner(): BelongsTo
     {
-        $model = config('cashier.model', config('auth.providers.users.model', 'App\\Models\\User'));
+        $model = Cashier::$model;
 
         return $this->belongsTo($model, 'user_id');
-    }
-
-    public function items(): HasMany
-    {
-        return $this->hasMany(Cashier::$subscriptionItemModel, 'subscription_id');
     }
 
     public function valid(): bool
@@ -44,7 +41,7 @@ class Subscription extends Model
     {
         return (is_null($this->ends_at) || $this->onGracePeriod()) &&
             (!$this->onTrial() || $this->trial_ends_at->isFuture()) &&
-            $this->iyzico_status === 'active';
+            $this->iyzico_status === SubscriptionStatusEnum::ACTIVE->value;
     }
 
     public function cancelled(): bool
@@ -64,7 +61,23 @@ class Subscription extends Model
 
     public function cancel(): self
     {
+        $subscriptionService = new SubscriptionService();
+
+        $nextPaymentPeriod = $subscriptionService->detail($this->iyzico_id)->getOrders()[0]->startPeriod;
+
+        $subscriptionService->cancel($this->iyzico_id);
+
+        $this->iyzico_status = SubscriptionStatusEnum::CANCELED->value;
+
         $this->ends_at = $this->onTrial() ? $this->trial_ends_at : $this->ends_at ?? now();
+        $this->save();
+
+        if ($this->onTrial()) {
+            $this->ends_at = $this->trial_ends_at;
+        } else {
+            $this->ends_at = Carbon::createFromTimestampMs($nextPaymentPeriod, 'UTC')->startOfDay();
+        }
+
         $this->save();
 
         return $this;

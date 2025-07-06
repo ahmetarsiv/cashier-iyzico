@@ -4,6 +4,7 @@
     "description": "Laravel Cashier provides an expressive, fluent interface to Iyzico's subscription billing services.",
     "keywords": [
         "laravel",
+        "codenteq",
         "iyzico",
         "billing"
     ],

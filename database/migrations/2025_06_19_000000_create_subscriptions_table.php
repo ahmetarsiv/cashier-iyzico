@@ -8,13 +8,13 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('subscriptions', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->uuid('id')->primary();
+            $table->foreignId('user_id');
             $table->string('name');
             $table->string('iyzico_id')->unique();
             $table->string('iyzico_status');
             $table->string('iyzico_plan');
-            $table->integer('quantity');
+            $table->string('iyzico_price');
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamp('ends_at')->nullable();
             $table->timestamps();

@@ -10,7 +10,7 @@ Thank you for considering contributing to Cashier! You can read the contribution
 
 ## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+In order to ensure that the Codenteq community is welcoming to all, please review and abide by the [Code of Conduct](https://codenteq.com/contributor-covenant-code-of-conduct/).
 
 ## Security Vulnerabilities
 
@@ -18,4 +18,4 @@ Please review [our security policy](https://github.com/codenteq/cashier-iyzico/s
 
 ## License
 
-Laravel Cashier is open-sourced software licensed under the [MIT license](LICENSE.md).
+Laravel Cashier Iyzico is open-sourced software licensed under the [MIT license](LICENSE.md).

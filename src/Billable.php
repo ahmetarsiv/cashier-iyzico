@@ -3,23 +3,55 @@
 namespace Codenteq\Iyzico;
 
 use Codenteq\Iyzico\Models\Subscription;
+use Codenteq\Iyzico\Services\SubscriptionBuilder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait Billable
 {
-    public function subscriptions(): HasMany
+    /**
+     * Begin creating a new subscription.
+     *
+     * @param string $name
+     * @param string $plan
+     * @return SubscriptionBuilder
+     */
+    public function newSubscription(string $name, string $plan): SubscriptionBuilder
     {
-        return $this->hasMany(Cashier::$subscriptionModel, 'user_id')->orderBy('created_at', 'desc');
+        return new SubscriptionBuilder($this, $name, $plan);
     }
 
+    /**
+     * Get all of the subscriptions for the billable model.
+     *
+     * @return HasMany
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Cashier::$subscriptionModel);
+    }
+
+    /**
+     * Get a subscription instance by name.
+     *
+     * @param string $name
+     * @return Subscription|null
+     */
     public function subscription(string $name = 'default'): ?Subscription
     {
         return $this->subscriptions()->where('name', $name)->first();
     }
 
+    /**
+     * Determine if the billable model is actively subscribed to one of the given plans.
+     *
+     * @param string $name
+     * @param string|null $plan
+     * @return bool
+     */
     public function subscribed(string $name = 'default', ?string $plan = null): bool
     {
         $subscription = $this->subscription($name);
+
 
         if (!$subscription || !$subscription->valid()) {
             return false;
@@ -28,7 +60,14 @@ trait Billable
         return $plan ? $subscription->hasPlan($plan) : true;
     }
 
-    public function onTrial(string $name = 'default', ?string $plan = null): bool
+    /**
+     * Determine if the billable model is on trial.
+     *
+     * @param string $name
+     * @param string|null $plan
+     * @return bool
+     */
+    public function onTrial(string $name = 'default', string $plan = null): bool
     {
         if (func_num_args() === 0 && $this->onGenericTrial()) {
             return true;
@@ -40,16 +79,28 @@ trait Billable
             return false;
         }
 
-        return $plan ? $subscription->hasPlan($plan) : true;
+        return !$plan || $subscription->hasPlan($plan);
     }
 
+    /**
+     * Determine if the billable model has a generic trial applied.
+     *
+     * @return bool
+     */
     public function onGenericTrial(): bool
     {
         return $this->trial_ends_at && $this->trial_ends_at->isFuture();
     }
 
-    public function newSubscription(string $name, string $plan): SubscriptionBuilder
+    public function cancel()
     {
-        return new SubscriptionBuilder($this, $name, $plan);
+        $subscription = $this->subscription();
+
+        if ($subscription) {
+            $subscription->cancel();
+            return true;
+        }
+
+        return false;
     }
 }

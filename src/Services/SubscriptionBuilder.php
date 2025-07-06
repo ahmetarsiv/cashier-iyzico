@@ -1,66 +1,108 @@
 <?php
 
-namespace Codenteq\Iyzico;
+namespace Codenteq\Iyzico\Services;
 
 use Carbon\Carbon;
 use Codenteq\Iyzico\Models\Subscription;
 
 class SubscriptionBuilder
 {
+    /**
+     * @var mixed
+     */
     protected $owner;
+
+    /**
+     * @var string
+     */
     protected $name;
+
+    /**
+     * @var string
+     */
     protected $plan;
-    protected $quantity = 1;
+
+    /**
+     * @var int
+     */
     protected $trialDays = 0;
+
+    /**
+     * @var bool
+     */
     protected $skipTrial = false;
+
+    /**
+     * @var array
+     */
     protected $metadata = [];
 
-    public function __construct($owner, string $name, string $plan)
+    /**
+     * Create a new subscription builder instance.
+     *
+     * @param mixed $owner
+     * @param string $name
+     * @param string $plan
+     */
+    public function __construct(mixed $owner, string $name, string $plan)
     {
         $this->owner = $owner;
         $this->name = $name;
         $this->plan = $plan;
     }
 
-    public function quantity(int $quantity): self
-    {
-        $this->quantity = $quantity;
-        return $this;
-    }
-
+    /**
+     * Set the trial period in days.
+     *
+     * @param int $trialDays
+     * @return self
+     */
     public function trialDays(int $trialDays): self
     {
         $this->trialDays = $trialDays;
         return $this;
     }
 
+    /**
+     * Skip the trial period.
+     *
+     * @return self
+     */
     public function skipTrial(): self
     {
         $this->skipTrial = true;
         return $this;
     }
 
-    public function create(array $options = []): Subscription
+    /**
+     * Create the subscription.
+     *
+     * @param array $data
+     * @return Subscription
+     * @throws \Exception
+     */
+    public function create(array $data = [])
     {
-        $iyzicoSubscription = $this->createIyzicoSubscription($options);
+        $iyzicoSubscriptionService = new SubscriptionService();
+
+        $response = $iyzicoSubscriptionService->create($data);
 
         return $this->owner->subscriptions()->create([
             'name' => $this->name,
-            'iyzico_id' => $iyzicoSubscription->getReferenceCode(),
-            'iyzico_status' => $iyzicoSubscription->getSubscriptionStatus(),
+            'iyzico_id' => $response->getReferenceCode(),
+            'iyzico_status' => $response->getSubscriptionStatus(),
             'iyzico_plan' => $this->plan,
-            'quantity' => $this->quantity,
+            'iyzico_price' => $data['price'],
             'trial_ends_at' => $this->skipTrial ? null : $this->trialExpiration(),
             'ends_at' => null,
         ]);
     }
 
-    protected function createIyzicoSubscription(array $options = [])
-    {
-        // İyzico SDK kullanarak abonelik oluşturma implementasyonu
-        // Bu kısım İyzico API dokümantasyonuna göre geliştirilmeli
-    }
-
+    /**
+     * Calculate the trial expiration date.
+     *
+     * @return Carbon|null
+     */
     protected function trialExpiration(): ?Carbon
     {
         if ($this->trialDays) {

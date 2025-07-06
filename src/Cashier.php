@@ -2,28 +2,52 @@
 
 namespace Codenteq\Iyzico;
 
-use Codenteq\Iyzico\Models\Payment;
 use Codenteq\Iyzico\Models\Subscription;
-use Codenteq\Iyzico\Models\SubscriptionItem;
 use Iyzipay\Options;
 
 class Cashier
 {
+    /**
+     * The billable model class name.
+     *
+     * @var string
+     */
     public static string $model = 'App\\Models\\User';
-    public static string $subscriptionModel = Subscription::class;
-    public static string $subscriptionItemModel = SubscriptionItem::class;
-    public static string $paymentModel = Payment::class;
 
+    /**
+     * The subscription model class name.
+     *
+     * @var string
+     */
+    public static string $subscriptionModel = Subscription::class;
+
+    /**
+     * Set the billable model class name.
+     *
+     * @param string $model
+     * @return void
+     */
     public static function useUserModel(string $model): void
     {
         static::$model = $model;
     }
 
+    /**
+     * Set the subscription model class name.
+     *
+     * @param string $model
+     * @return void
+     */
     public static function useSubscriptionModel(string $model): void
     {
         static::$subscriptionModel = $model;
     }
 
+    /**
+     * Get configured Iyzico API options.
+     *
+     * @return Options
+     */
     public static function iyzicoOptions(): Options
     {
         $options = new Options();
@@ -34,6 +58,12 @@ class Cashier
         return $options;
     }
 
+    /**
+     * Format amount from cents to decimal format.
+     *
+     * @param int $amount
+     * @return string
+     */
     public static function formatAmount(int $amount): string
     {
         return number_format($amount / 100, 2, '.', '');
