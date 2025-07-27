@@ -2,6 +2,7 @@
 
 namespace Codenteq\Iyzico;
 
+use Codenteq\Iyzico\Http\Middleware\VerifyWebhookSignature;
 use Illuminate\Support\ServiceProvider;
 
 class CashierServiceProvider extends ServiceProvider
@@ -36,8 +37,10 @@ class CashierServiceProvider extends ServiceProvider
             ], 'cashier-migrations');
 
             $this->publishes([
-                __DIR__ . '/../tests' => base_path('tests/vendor/cashier'),
+                __DIR__ . '/../tests' => base_path('tests/Feature/cashier'),
             ], 'cashier-tests');
         }
+
+        $this->app['router']->aliasMiddleware('verify-iyzico-webhook', VerifyWebhookSignature::class);
     }
 }

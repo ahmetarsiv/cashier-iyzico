@@ -39,4 +39,30 @@ return [
     |
     */
     'currency_symbol' => env('CASHIER_CURRENCY_SYMBOL', '₺'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Webhook Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Here you can configure webhook-related settings for your İyzico
+    | integration. This includes signature verification and tolerance.
+    |
+    */
+
+    'webhook' => [
+        'verify' => env('IYZICO_WEBHOOK_VERIFY', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cashier Model
+    |--------------------------------------------------------------------------
+    |
+    | This is the model that will be used for subscriptions and billing.
+    | Typically, this will be the User model in your application.
+    |
+    */
+
+    'model' => env('CASHIER_MODEL', App\Models\User::class),
 ];

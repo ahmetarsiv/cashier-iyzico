@@ -25,6 +25,10 @@ class CreateSubscriptionTest extends TestCase
     {
         parent::setUp();
 
+        config([
+            'cashier.iyzico.webhook.verify' => false,
+        ]);
+
         $this->options = new Options();
         $this->options->setApiKey(config('cashier.iyzico.api_key'));
         $this->options->setSecretKey(config('cashier.iyzico.secret_key'));
