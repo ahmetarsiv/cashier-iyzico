@@ -4,7 +4,6 @@ namespace Codenteq\Iyzico\Tests\Feature;
 
 use App\Models\User;
 use Codenteq\Iyzico\Enums\PaymentIntervalEnum;
-use Codenteq\Iyzico\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Iyzipay\Model\Subscription\SubscriptionPricingPlan;
 use Iyzipay\Model\Subscription\SubscriptionProduct;
@@ -13,7 +12,7 @@ use Iyzipay\Request\Subscription\SubscriptionCreatePricingPlanRequest;
 use Iyzipay\Request\Subscription\SubscriptionCreateProductRequest;
 use Tests\TestCase;
 
-class CreateSubscriptionTest extends TestCase
+class RetrySubscriptionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -53,7 +52,7 @@ class CreateSubscriptionTest extends TestCase
         $this->paymentPlan = SubscriptionPricingPlan::create($paymentPlanRequest, $this->options);
     }
 
-    public function test_user_can_create_subscription()
+    public function test_user_can_retry_subscription()
     {
         $user = User::factory()->create();
 
@@ -84,14 +83,13 @@ class CreateSubscriptionTest extends TestCase
                 ],
                 'card' => [
                     'cardHolderName' => 'Ahmet Sefa Arsiv',
-                    'cardNumber' => '5528790000000008',
+                    'cardNumber' => '4111111111111129',
                     'expireMonth' => '12',
                     'expireYear' => '2030',
                     'cvc' => '123',
                 ],
             ]);
 
-        $this->assertTrue($user->subscribed($this->product->getName()));
-        $this->assertInstanceOf(Subscription::class, $subscription);
+        $this->assertTrue($subscription->retry());
     }
 }

@@ -4,7 +4,6 @@ namespace Codenteq\Iyzico\Tests\Feature;
 
 use App\Models\User;
 use Codenteq\Iyzico\Enums\PaymentIntervalEnum;
-use Codenteq\Iyzico\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Iyzipay\Model\Subscription\SubscriptionPricingPlan;
 use Iyzipay\Model\Subscription\SubscriptionProduct;
@@ -13,7 +12,7 @@ use Iyzipay\Request\Subscription\SubscriptionCreatePricingPlanRequest;
 use Iyzipay\Request\Subscription\SubscriptionCreateProductRequest;
 use Tests\TestCase;
 
-class CreateSubscriptionTest extends TestCase
+class CancelSubscriptionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -53,7 +52,7 @@ class CreateSubscriptionTest extends TestCase
         $this->paymentPlan = SubscriptionPricingPlan::create($paymentPlanRequest, $this->options);
     }
 
-    public function test_user_can_create_subscription()
+    public function test_user_can_cancel_subscription()
     {
         $user = User::factory()->create();
 
@@ -91,7 +90,8 @@ class CreateSubscriptionTest extends TestCase
                 ],
             ]);
 
-        $this->assertTrue($user->subscribed($this->product->getName()));
-        $this->assertInstanceOf(Subscription::class, $subscription);
+        $subscription->cancel();
+
+        $this->assertTrue($subscription->cancelled());
     }
 }

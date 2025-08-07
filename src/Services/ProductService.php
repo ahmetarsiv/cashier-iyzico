@@ -3,8 +3,8 @@
 namespace Codenteq\Iyzico\Services;
 
 use Iyzipay\Model\Subscription\SubscriptionProduct;
-use Iyzipay\Request\Subscription\SubscriptionCreateProductRequest;
 use Iyzipay\Options;
+use Iyzipay\Request\Subscription\SubscriptionCreateProductRequest;
 
 class ProductService
 {
@@ -12,7 +12,7 @@ class ProductService
 
     public function __construct()
     {
-        $this->options = new Options();
+        $this->options = new Options;
         $this->options->setApiKey(config('cashier.iyzico.api_key'));
         $this->options->setSecretKey(config('cashier.iyzico.secret_key'));
         $this->options->setBaseUrl(config('cashier.iyzico.base_url'));

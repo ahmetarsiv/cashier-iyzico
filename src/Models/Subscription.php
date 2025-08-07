@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Subscription extends Model
 {
     use HasUuids;
+
     protected $guarded = [];
 
     protected $casts = [
@@ -40,13 +41,13 @@ class Subscription extends Model
     public function active(): bool
     {
         return (is_null($this->ends_at) || $this->onGracePeriod()) &&
-            (!$this->onTrial() || $this->trial_ends_at->isFuture()) &&
+            (! $this->onTrial() || $this->trial_ends_at->isFuture()) &&
             $this->iyzico_status === SubscriptionStatusEnum::ACTIVE->value;
     }
 
     public function cancelled(): bool
     {
-        return !is_null($this->ends_at);
+        return ! is_null($this->ends_at);
     }
 
     public function onTrial(): bool
@@ -61,7 +62,7 @@ class Subscription extends Model
 
     public function cancel(): self
     {
-        $subscriptionService = new SubscriptionService();
+        $subscriptionService = new SubscriptionService;
 
         $nextPaymentPeriod = $subscriptionService->detail($this->iyzico_id)->getOrders()[0]->startPeriod;
 
@@ -94,5 +95,78 @@ class Subscription extends Model
     public function hasPlan(string $plan): bool
     {
         return $this->iyzico_plan === $plan;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function retry(): self|bool
+    {
+        $subscriptionService = new SubscriptionService;
+
+        $response = $subscriptionService->retry($this->iyzico_id);
+
+        if ($response->getStatus() === 'success') {
+            $this->iyzico_status = SubscriptionStatusEnum::ACTIVE->value;
+
+            $this->save();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function activate(): self|bool
+    {
+        $subscriptionService = new SubscriptionService;
+
+        $response = $subscriptionService->activate($this->iyzico_id);
+
+        if ($response->getStatus() === 'success') {
+            $this->iyzico_status = SubscriptionStatusEnum::ACTIVE->value;
+
+            $this->save();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function upgrade(string $newPricingPlanReferenceCode): bool
+    {
+        $subscriptionService = new SubscriptionService;
+
+        $response = $subscriptionService->upgrade($this->iyzico_id, $newPricingPlanReferenceCode);
+
+        if ($response->getStatus() === 'success') {
+            $this->iyzico_status = SubscriptionStatusEnum::ACTIVE->value;
+
+            $this->save();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function detail()
+    {
+        $subscriptionService = new SubscriptionService;
+
+        $response = $subscriptionService->detail($this->iyzico_id);
+
+        if ($response->getStatus() === 'success') {
+            return $response;
+        }
+
+        return false;
     }
 }

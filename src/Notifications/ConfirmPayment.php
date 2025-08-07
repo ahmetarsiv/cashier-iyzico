@@ -3,9 +3,9 @@
 namespace Codenteq\Iyzico\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ConfirmPayment extends Notification implements ShouldQueue
 {
@@ -20,7 +20,7 @@ class ConfirmPayment extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject('Aboneliğiniz Başladı!')
-            ->greeting('Merhaba ' . $notifiable->name . ' 👋')
+            ->greeting('Merhaba '.$notifiable->name.' 👋')
             ->line('Aboneliğiniz başarıyla aktif edildi.')
             ->line('Hizmetlerimizi kullanmaya başlayabilirsiniz.')
             ->action('Panele Git', url('/dashboard'))

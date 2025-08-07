@@ -10,10 +10,6 @@ trait Billable
 {
     /**
      * Begin creating a new subscription.
-     *
-     * @param string $name
-     * @param string $plan
-     * @return SubscriptionBuilder
      */
     public function newSubscription(string $name, string $plan): SubscriptionBuilder
     {
@@ -22,8 +18,6 @@ trait Billable
 
     /**
      * Get all of the subscriptions for the billable model.
-     *
-     * @return HasMany
      */
     public function subscriptions(): HasMany
     {
@@ -32,9 +26,6 @@ trait Billable
 
     /**
      * Get a subscription instance by name.
-     *
-     * @param string $name
-     * @return Subscription|null
      */
     public function subscription(string $name = 'default'): ?Subscription
     {
@@ -43,17 +34,12 @@ trait Billable
 
     /**
      * Determine if the billable model is actively subscribed to one of the given plans.
-     *
-     * @param string $name
-     * @param string|null $plan
-     * @return bool
      */
     public function subscribed(string $name = 'default', ?string $plan = null): bool
     {
         $subscription = $this->subscription($name);
 
-
-        if (!$subscription || !$subscription->valid()) {
+        if (! $subscription || ! $subscription->valid()) {
             return false;
         }
 
@@ -62,12 +48,8 @@ trait Billable
 
     /**
      * Determine if the billable model is on trial.
-     *
-     * @param string $name
-     * @param string|null $plan
-     * @return bool
      */
-    public function onTrial(string $name = 'default', string $plan = null): bool
+    public function onTrial(string $name = 'default', ?string $plan = null): bool
     {
         if (func_num_args() === 0 && $this->onGenericTrial()) {
             return true;
@@ -75,17 +57,15 @@ trait Billable
 
         $subscription = $this->subscription($name);
 
-        if (!$subscription || !$subscription->onTrial()) {
+        if (! $subscription || ! $subscription->onTrial()) {
             return false;
         }
 
-        return !$plan || $subscription->hasPlan($plan);
+        return ! $plan || $subscription->hasPlan($plan);
     }
 
     /**
      * Determine if the billable model has a generic trial applied.
-     *
-     * @return bool
      */
     public function onGenericTrial(): bool
     {
@@ -98,6 +78,7 @@ trait Billable
 
         if ($subscription) {
             $subscription->cancel();
+
             return true;
         }
 

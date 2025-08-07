@@ -39,10 +39,6 @@ class SubscriptionBuilder
 
     /**
      * Create a new subscription builder instance.
-     *
-     * @param mixed $owner
-     * @param string $name
-     * @param string $plan
      */
     public function __construct(mixed $owner, string $name, string $plan)
     {
@@ -53,39 +49,40 @@ class SubscriptionBuilder
 
     /**
      * Set the trial period in days.
-     *
-     * @param int $trialDays
-     * @return self
      */
     public function trialDays(int $trialDays): self
     {
         $this->trialDays = $trialDays;
+
         return $this;
     }
 
     /**
      * Skip the trial period.
-     *
-     * @return self
      */
     public function skipTrial(): self
     {
         $this->skipTrial = true;
+
         return $this;
     }
 
     /**
      * Create the subscription.
      *
-     * @param array $data
      * @return Subscription
+     *
      * @throws \Exception
      */
     public function create(array $data = [])
     {
-        $iyzicoSubscriptionService = new SubscriptionService();
+        $iyzicoSubscriptionService = new SubscriptionService;
 
         $response = $iyzicoSubscriptionService->create($data);
+
+        if ($response->getStatus() === 'failure') {
+            throw new \Exception($response->getRawResult());
+        }
 
         return $this->owner->subscriptions()->create([
             'name' => $this->name,
@@ -100,8 +97,6 @@ class SubscriptionBuilder
 
     /**
      * Calculate the trial expiration date.
-     *
-     * @return Carbon|null
      */
     protected function trialExpiration(): ?Carbon
     {

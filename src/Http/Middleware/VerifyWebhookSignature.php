@@ -11,9 +11,6 @@ class VerifyWebhookSignature
     /**
      * Handle the incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
      *
      * @throws \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException
      */
@@ -34,10 +31,6 @@ class VerifyWebhookSignature
 
     /**
      * Verify the webhook signature.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string  $signature
-     * @return bool
      */
     protected function verify(Request $request, string $signature): bool
     {
@@ -53,11 +46,6 @@ class VerifyWebhookSignature
 
     /**
      * Verify Direct Format webhook signature.
-     *
-     * @param  array  $payload
-     * @param  string  $secretKey
-     * @param  string  $signature
-     * @return bool
      */
     protected function verifyDirectFormat(array $payload, string $secretKey, string $signature): bool
     {
@@ -66,7 +54,7 @@ class VerifyWebhookSignature
         $paymentConversationId = $payload['paymentConversationId'] ?? '';
         $status = $payload['status'] ?? '';
 
-        $key = $secretKey . $iyziEventType . $paymentId . $paymentConversationId . $status;
+        $key = $secretKey.$iyziEventType.$paymentId.$paymentConversationId.$status;
 
         $expectedSignature = hash_hmac('sha256', $key, $secretKey);
 
@@ -75,11 +63,6 @@ class VerifyWebhookSignature
 
     /**
      * Verify HPP Format webhook signature.
-     *
-     * @param  array  $payload
-     * @param  string  $secretKey
-     * @param  string  $signature
-     * @return bool
      */
     protected function verifyHppFormat(array $payload, string $secretKey, string $signature): bool
     {
@@ -89,7 +72,7 @@ class VerifyWebhookSignature
         $paymentConversationId = $payload['paymentConversationId'] ?? '';
         $status = $payload['status'] ?? '';
 
-        $key = $secretKey . $iyziEventType . $iyziPaymentId . $token . $paymentConversationId . $status;
+        $key = $secretKey.$iyziEventType.$iyziPaymentId.$token.$paymentConversationId.$status;
 
         $expectedSignature = hash_hmac('sha256', $key, $secretKey);
 

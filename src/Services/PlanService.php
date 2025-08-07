@@ -12,7 +12,7 @@ class PlanService
 
     public function __construct()
     {
-        $this->options = new Options();
+        $this->options = new Options;
         $this->options->setApiKey(config('cashier.iyzico.api_key'));
         $this->options->setSecretKey(config('cashier.iyzico.secret_key'));
         $this->options->setBaseUrl(config('cashier.iyzico.base_url'));

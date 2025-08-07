@@ -4,7 +4,6 @@ namespace Codenteq\Iyzico\Tests\Feature;
 
 use App\Models\User;
 use Codenteq\Iyzico\Enums\PaymentIntervalEnum;
-use Codenteq\Iyzico\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Iyzipay\Model\Subscription\SubscriptionPricingPlan;
 use Iyzipay\Model\Subscription\SubscriptionProduct;
@@ -13,11 +12,13 @@ use Iyzipay\Request\Subscription\SubscriptionCreatePricingPlanRequest;
 use Iyzipay\Request\Subscription\SubscriptionCreateProductRequest;
 use Tests\TestCase;
 
-class CreateSubscriptionTest extends TestCase
+class UpgradeSubscriptionTest extends TestCase
 {
     use RefreshDatabase;
 
     private SubscriptionPricingPlan $paymentPlan;
+
+    private SubscriptionPricingPlan $paymentPlan2;
 
     private SubscriptionProduct $product;
 
@@ -50,10 +51,21 @@ class CreateSubscriptionTest extends TestCase
         $paymentPlanRequest->setCurrencyCode('TRY');
         $paymentPlanRequest->SetPrice(79.99);
 
+        $paymentPlanRequest2 = new SubscriptionCreatePricingPlanRequest;
+
+        $paymentPlanRequest2->setName('Premium Plan');
+        $paymentPlanRequest2->setProductReferenceCode($this->product->getReferenceCode());
+        $paymentPlanRequest2->setPlanPaymentType('RECURRING');
+        $paymentPlanRequest2->setPaymentIntervalCount(1);
+        $paymentPlanRequest2->setPaymentInterval(PaymentIntervalEnum::MONTHLY->value);
+        $paymentPlanRequest2->setCurrencyCode('TRY');
+        $paymentPlanRequest2->SetPrice(99.99);
+
         $this->paymentPlan = SubscriptionPricingPlan::create($paymentPlanRequest, $this->options);
+        $this->paymentPlan2 = SubscriptionPricingPlan::create($paymentPlanRequest2, $this->options);
     }
 
-    public function test_user_can_create_subscription()
+    public function test_user_can_upgrade_subscription()
     {
         $user = User::factory()->create();
 
@@ -91,7 +103,6 @@ class CreateSubscriptionTest extends TestCase
                 ],
             ]);
 
-        $this->assertTrue($user->subscribed($this->product->getName()));
-        $this->assertInstanceOf(Subscription::class, $subscription);
+        $this->assertTrue($subscription->upgrade($this->paymentPlan2->getReferenceCode()));
     }
 }

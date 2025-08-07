@@ -9,23 +9,19 @@ use Iyzipay\Model\PaymentCard;
 use Iyzipay\Model\Subscription\SubscriptionActivate;
 use Iyzipay\Model\Subscription\SubscriptionCancel;
 use Iyzipay\Model\Subscription\SubscriptionCreate;
-use Iyzipay\Model\Subscription\SubscriptionCreateCheckoutForm;
 use Iyzipay\Model\Subscription\SubscriptionDetails;
 use Iyzipay\Model\Subscription\SubscriptionRetry;
 use Iyzipay\Model\Subscription\SubscriptionUpgrade;
+use Iyzipay\Options;
 use Iyzipay\Request\Subscription\SubscriptionActivateRequest;
 use Iyzipay\Request\Subscription\SubscriptionCancelRequest;
 use Iyzipay\Request\Subscription\SubscriptionCreateRequest;
-use Iyzipay\Options;
 use Iyzipay\Request\Subscription\SubscriptionDetailsRequest;
 use Iyzipay\Request\Subscription\SubscriptionRetryRequest;
 use Iyzipay\Request\Subscription\SubscriptionUpgradeRequest;
 
 class SubscriptionService
 {
-    /**
-     * @var Options
-     */
     protected Options $options;
 
     /**
@@ -33,7 +29,7 @@ class SubscriptionService
      */
     public function __construct()
     {
-        $this->options = new Options();
+        $this->options = new Options;
         $this->options->setApiKey(config('cashier.iyzico.api_key'));
         $this->options->setSecretKey(config('cashier.iyzico.secret_key'));
         $this->options->setBaseUrl(config('cashier.iyzico.base_url'));
@@ -42,17 +38,17 @@ class SubscriptionService
     /**
      * Create a new subscription.
      *
-     * @param array $data
      * @return SubscriptionCreateRequest
+     *
      * @throws \Exception
      */
     public function create(array $data): SubscriptionCreate
     {
-        $request = new SubscriptionCreateRequest();
+        $request = new SubscriptionCreateRequest;
         $request->setPricingPlanReferenceCode($data['pricing_plan_reference_code']);
-        $request->setSubscriptionInitialStatus(SubscriptionStatusEnum::ACTIVE->value);
+        $request->setSubscriptionInitialStatus(SubscriptionStatusEnum::PENDING->value);
 
-        $customer = new Customer();
+        $customer = new Customer;
         $customer->setName($data['customer']['name']);
         $customer->setSurname($data['customer']['surname']);
         $customer->setGsmNumber($data['customer']['gsmNumber']);
@@ -73,7 +69,7 @@ class SubscriptionService
 
         $request->setCustomer($customer);
 
-        $paymentCard = new PaymentCard();
+        $paymentCard = new PaymentCard;
         $paymentCard->setCardHolderName($data['card']['cardHolderName']);
         $paymentCard->setCardNumber($data['card']['cardNumber']);
         $paymentCard->setExpireMonth($data['card']['expireMonth']);
@@ -89,13 +85,11 @@ class SubscriptionService
     /**
      * Activate a subscription.
      *
-     * @param string $subscriptionReferenceCode
-     * @return IyzipayResource
      * @throws \Exception
      */
     public function activate(string $subscriptionReferenceCode): IyzipayResource
     {
-        $request = new SubscriptionActivateRequest();
+        $request = new SubscriptionActivateRequest;
         $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
 
         return SubscriptionActivate::update($request, $this->options);
@@ -104,13 +98,11 @@ class SubscriptionService
     /**
      * Retry a failed subscription payment.
      *
-     * @param string $referenceCode
-     * @return IyzipayResource
      * @throws \Exception
      */
     public function retry(string $referenceCode): IyzipayResource
     {
-        $request = new SubscriptionRetryRequest();
+        $request = new SubscriptionRetryRequest;
         $request->setReferenceCode($referenceCode);
 
         return SubscriptionRetry::update($request, $this->options);
@@ -119,32 +111,28 @@ class SubscriptionService
     /**
      * Upgrade a subscription to a new pricing plan.
      *
-     * @param string $subscriptionReferenceCode
-     * @param string $newPricingPlanReferenceCode
-     * @return SubscriptionUpgrade
      * @throws \Exception
      */
-    /*public function upgrade(string $subscriptionReferenceCode, string $newPricingPlanReferenceCode): SubscriptionUpgrade
+    public function upgrade(string $subscriptionReferenceCode, string $newPricingPlanReferenceCode): SubscriptionUpgrade
     {
-        $request = new SubscriptionUpgradeRequest();
+        $request = new SubscriptionUpgradeRequest;
         $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
+        $request->setResetRecurrenceCount(true);
+        $request->setUseTrial(false);
         $request->setNewPricingPlanReferenceCode($newPricingPlanReferenceCode);
         $request->setUpgradePeriod(now());
-        $request->setResetRecurrenceCount(true);
 
         return SubscriptionUpgrade::update($request, $this->options);
-    }*/
+    }
 
     /**
      * Cancel a subscription.
      *
-     * @param string $subscriptionReferenceCode
-     * @return IyzipayResource
      * @throws \Exception
      */
     public function cancel(string $subscriptionReferenceCode): IyzipayResource
     {
-        $request = new SubscriptionCancelRequest();
+        $request = new SubscriptionCancelRequest;
         $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
 
         return SubscriptionCancel::cancel($request, $this->options);
@@ -153,13 +141,11 @@ class SubscriptionService
     /**
      * Retrieve subscription details.
      *
-     * @param string $subscriptionReferenceCode
-     * @return SubscriptionDetails
      * @throws \Exception
      */
     public function detail(string $subscriptionReferenceCode): SubscriptionDetails
     {
-        $request = new SubscriptionDetailsRequest();
+        $request = new SubscriptionDetailsRequest;
         $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
 
         return SubscriptionDetails::retrieve($request, $this->options);

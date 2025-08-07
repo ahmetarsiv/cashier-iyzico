@@ -2,13 +2,13 @@
 
 namespace Codenteq\Iyzico\Http\Controllers;
 
+use Codenteq\Iyzico\Events\WebhookHandled;
+use Codenteq\Iyzico\Events\WebhookReceived;
+use Codenteq\Iyzico\Http\Middleware\VerifyWebhookSignature;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
-use Codenteq\Iyzico\Events\WebhookReceived;
-use Codenteq\Iyzico\Events\WebhookHandled;
-use Codenteq\Iyzico\Http\Middleware\VerifyWebhookSignature;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class WebhookController extends Controller
@@ -16,18 +16,13 @@ class WebhookController extends Controller
     /**
      * Create a new WebhookController instance.
      */
-    public function __construct()
+    /*public function __construct()
     {
-        if (config('cashier.iyzico.webhook.verify', true)) {
-            $this->middleware(VerifyWebhookSignature::class);
-        }
-    }
+        $this->middleware(VerifyWebhookSignature::class);
+    }*/
 
     /**
      * Handle an İyzico webhook call.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function handleWebhook(Request $request): SymfonyResponse
     {
@@ -49,9 +44,6 @@ class WebhookController extends Controller
 
     /**
      * Handle successful subscription payment.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handleSubscriptionPaymentSucceeded(array $payload): SymfonyResponse
     {
@@ -71,13 +63,12 @@ class WebhookController extends Controller
 
     /**
      * Handle failed subscription payment.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handleSubscriptionPaymentFailed(array $payload): SymfonyResponse
     {
-        if ($user = $this->getUserByPaymentConversationId($payload['paymentConversationId'])) {
+        $user = $this->getUserByPaymentConversationId($payload['paymentConversationId']);
+
+        if ($user) {
             $subscription = $user->subscription();
 
             if ($subscription) {
@@ -99,9 +90,6 @@ class WebhookController extends Controller
 
     /**
      * Handle payment API webhook.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handlePaymentApi(array $payload): SymfonyResponse
     {
@@ -119,9 +107,6 @@ class WebhookController extends Controller
 
     /**
      * Handle API auth webhook.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handleApiAuth(array $payload): SymfonyResponse
     {
@@ -130,9 +115,6 @@ class WebhookController extends Controller
 
     /**
      * Handle 3DS auth webhook.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handleThreeDsAuth(array $payload): SymfonyResponse
     {
@@ -141,9 +123,6 @@ class WebhookController extends Controller
 
     /**
      * Handle 3DS callback webhook.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handleThreeDsCallback(array $payload): SymfonyResponse
     {
@@ -152,9 +131,6 @@ class WebhookController extends Controller
 
     /**
      * Handle refund retry success webhook.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handleRefundRetrySuccess(array $payload): SymfonyResponse
     {
@@ -172,9 +148,6 @@ class WebhookController extends Controller
 
     /**
      * Handle refund retry failure webhook.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function handleRefundRetryFailure(array $payload): SymfonyResponse
     {
@@ -192,9 +165,6 @@ class WebhookController extends Controller
 
     /**
      * Handle a webhook call for a missing method.
-     *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     protected function missingMethod(array $payload): SymfonyResponse
     {
@@ -208,19 +178,15 @@ class WebhookController extends Controller
 
     /**
      * Convert the event type to a method name.
-     *
-     * @param  string  $eventType
-     * @return string
      */
     protected function eventToMethod(string $eventType): string
     {
-        return 'handle' . str_replace('_', '', ucwords($eventType, '_'));
+        return 'handle'.str_replace('_', '', ucwords($eventType, '_'));
     }
 
     /**
      * Get the billable entity instance by payment conversation ID.
      *
-     * @param  string  $paymentConversationId
      * @return \Illuminate\Database\Eloquent\Model|null
      */
     protected function getUserByPaymentConversationId(string $paymentConversationId)
@@ -232,9 +198,6 @@ class WebhookController extends Controller
 
     /**
      * Get amount from payload.
-     *
-     * @param  array  $payload
-     * @return int
      */
     protected function getAmountFromPayload(array $payload): int
     {

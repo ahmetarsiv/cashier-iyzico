@@ -9,23 +9,16 @@ class Cashier
 {
     /**
      * The billable model class name.
-     *
-     * @var string
      */
     public static string $model = 'App\\Models\\User';
 
     /**
      * The subscription model class name.
-     *
-     * @var string
      */
     public static string $subscriptionModel = Subscription::class;
 
     /**
      * Set the billable model class name.
-     *
-     * @param string $model
-     * @return void
      */
     public static function useUserModel(string $model): void
     {
@@ -34,9 +27,6 @@ class Cashier
 
     /**
      * Set the subscription model class name.
-     *
-     * @param string $model
-     * @return void
      */
     public static function useSubscriptionModel(string $model): void
     {
@@ -45,12 +35,10 @@ class Cashier
 
     /**
      * Get configured Iyzico API options.
-     *
-     * @return Options
      */
     public static function iyzicoOptions(): Options
     {
-        $options = new Options();
+        $options = new Options;
         $options->setApiKey(config('cashier.iyzico.api_key'));
         $options->setSecretKey(config('cashier.iyzico.secret_key'));
         $options->setBaseUrl(config('cashier.iyzico.base_url'));
@@ -60,9 +48,6 @@ class Cashier
 
     /**
      * Format amount from cents to decimal format.
-     *
-     * @param int $amount
-     * @return string
      */
     public static function formatAmount(int $amount): string
     {
