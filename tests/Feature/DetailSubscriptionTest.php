@@ -90,6 +90,6 @@ class DetailSubscriptionTest extends TestCase
                 ],
             ]);
 
-        $this->assertTrue($subscription->detail());
+        $this->assertIsObject($subscription->detail());
     }
 }

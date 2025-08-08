@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Codenteq\Iyzico\Cashier;
 use Codenteq\Iyzico\Enums\SubscriptionStatusEnum;
 use Codenteq\Iyzico\Services\SubscriptionService;
+use Codenteq\Iyzico\Exceptions\SubscriptionException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,17 @@ class Subscription extends Model
         'ends_at' => 'datetime',
     ];
 
+    private SubscriptionService $subscriptionService;
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->subscriptionService = new SubscriptionService();
+    }
+
+    /**
+     * İlişkiler
+     */
     public function user(): BelongsTo
     {
         return $this->owner();
@@ -28,11 +40,12 @@ class Subscription extends Model
 
     public function owner(): BelongsTo
     {
-        $model = Cashier::$model;
-
-        return $this->belongsTo($model, 'user_id');
+        return $this->belongsTo(Cashier::$model, 'user_id');
     }
 
+    /**
+     * Durum kontrolleri
+     */
     public function valid(): bool
     {
         return $this->active() || $this->onTrial() || $this->onGracePeriod();
@@ -40,56 +53,24 @@ class Subscription extends Model
 
     public function active(): bool
     {
-        return (is_null($this->ends_at) || $this->onGracePeriod()) &&
-            (! $this->onTrial() || $this->trial_ends_at->isFuture()) &&
-            $this->iyzico_status === SubscriptionStatusEnum::ACTIVE->value;
+        return $this->isNotExpired()
+            && $this->isTrialValid()
+            && $this->isIyzicoStatusActive();
     }
 
     public function cancelled(): bool
     {
-        return ! is_null($this->ends_at);
+        return !is_null($this->ends_at);
     }
 
     public function onTrial(): bool
     {
-        return $this->trial_ends_at && $this->trial_ends_at->isFuture();
+        return $this->trial_ends_at?->isFuture() ?? false;
     }
 
     public function onGracePeriod(): bool
     {
-        return $this->ends_at && $this->ends_at->isFuture();
-    }
-
-    public function cancel(): self
-    {
-        $subscriptionService = new SubscriptionService;
-
-        $nextPaymentPeriod = $subscriptionService->detail($this->iyzico_id)->getOrders()[0]->startPeriod;
-
-        $subscriptionService->cancel($this->iyzico_id);
-
-        $this->iyzico_status = SubscriptionStatusEnum::CANCELED->value;
-
-        $this->ends_at = $this->onTrial() ? $this->trial_ends_at : $this->ends_at ?? now();
-        $this->save();
-
-        if ($this->onTrial()) {
-            $this->ends_at = $this->trial_ends_at;
-        } else {
-            $this->ends_at = Carbon::createFromTimestampMs($nextPaymentPeriod, 'UTC')->startOfDay();
-        }
-
-        $this->save();
-
-        return $this;
-    }
-
-    public function resume(): self
-    {
-        $this->ends_at = null;
-        $this->save();
-
-        return $this;
+        return $this->ends_at?->isFuture() ?? false;
     }
 
     public function hasPlan(string $plan): bool
@@ -98,75 +79,138 @@ class Subscription extends Model
     }
 
     /**
-     * @throws \Exception
+     * Aksiyon metodları
      */
-    public function retry(): self|bool
+    public function cancel(): self
     {
-        $subscriptionService = new SubscriptionService;
+        try {
+            $nextPaymentDate = $this->getNextPaymentDate();
 
-        $response = $subscriptionService->retry($this->iyzico_id);
+            $this->subscriptionService->cancel($this->iyzico_id);
 
-        if ($response->getStatus() === 'success') {
-            $this->iyzico_status = SubscriptionStatusEnum::ACTIVE->value;
+            $this->update([
+                'iyzico_status' => SubscriptionStatusEnum::CANCELED->value,
+                'ends_at' => $this->calculateEndDate($nextPaymentDate)
+            ]);
 
-            $this->save();
-
-            return true;
+            return $this;
+        } catch (\Exception $e) {
+            throw new SubscriptionException("Subscription cancel failed: " . $e->getMessage());
         }
-
-        return false;
     }
 
-    /**
-     * @throws \Exception
-     */
-    public function activate(): self|bool
+    public function resume(): self
     {
-        $subscriptionService = new SubscriptionService;
+        $this->update(['ends_at' => null]);
+        return $this;
+    }
 
-        $response = $subscriptionService->activate($this->iyzico_id);
+    public function retry(): bool
+    {
+        return $this->executeIyzicoAction(
+            fn() => $this->subscriptionService->retry($this->iyzico_id)
+        );
+    }
 
-        if ($response->getStatus() === 'success') {
-            $this->iyzico_status = SubscriptionStatusEnum::ACTIVE->value;
-
-            $this->save();
-
-            return true;
-        }
-
-        return false;
+    public function activate(): bool
+    {
+        return $this->executeIyzicoAction(
+            fn() => $this->subscriptionService->activate($this->iyzico_id)
+        );
     }
 
     public function upgrade(string $newPricingPlanReferenceCode): bool
     {
-        $subscriptionService = new SubscriptionService;
+        return $this->executeIyzicoAction(
+            fn() => $this->subscriptionService->upgrade($this->iyzico_id, $newPricingPlanReferenceCode)
+        );
+    }
 
-        $response = $subscriptionService->upgrade($this->iyzico_id, $newPricingPlanReferenceCode);
+    public function detail()
+    {
+        try {
+            $response = $this->subscriptionService->detail($this->iyzico_id);
 
-        if ($response->getStatus() === 'success') {
-            $this->iyzico_status = SubscriptionStatusEnum::ACTIVE->value;
+            if ($response->getStatus() !== 'success') {
+                throw new SubscriptionException('Subscription detail fetch failed');
+            }
 
-            $this->save();
-
-            return true;
+            return $response;
+        } catch (\Exception $e) {
+            throw new SubscriptionException("Detail fetch failed: " . $e->getMessage());
         }
-
-        return false;
     }
 
     /**
-     * @throws \Exception
+     * Yardımcı metodlar (Private)
      */
-    public function detail()
+    private function isNotExpired(): bool
     {
-        $subscriptionService = new SubscriptionService;
+        return is_null($this->ends_at) || $this->onGracePeriod();
+    }
 
-        $response = $subscriptionService->detail($this->iyzico_id);
+    private function isTrialValid(): bool
+    {
+        return !$this->onTrial() || $this->trial_ends_at->isFuture();
+    }
 
-        if ($response->getStatus() === 'success') {
-            return $response;
+    private function isIyzicoStatusActive(): bool
+    {
+        return $this->iyzico_status === SubscriptionStatusEnum::ACTIVE->value;
+    }
+
+    private function getNextPaymentDate(): int
+    {
+        $detail = $this->detail();
+        return $detail->getOrders()[0]->startPeriod ?? now()->timestamp * 1000;
+    }
+
+    private function calculateEndDate(int $nextPaymentPeriod): Carbon
+    {
+        if ($this->onTrial()) {
+            return $this->trial_ends_at;
         }
 
-        return false;
+        return Carbon::createFromTimestampMs($nextPaymentPeriod, 'UTC')->startOfDay();
+    }
+
+    private function executeIyzicoAction(callable $action): bool
+    {
+        try {
+            $response = $action();
+
+            if ($response->getStatus() === 'success') {
+                $this->update(['iyzico_status' => SubscriptionStatusEnum::ACTIVE->value]);
+                return true;
+            }
+
+            return false;
+        } catch (\Exception $e) {
+            throw new SubscriptionException("Iyzico action failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Scope'lar
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('iyzico_status', SubscriptionStatusEnum::ACTIVE->value);
+    }
+
+    public function scopeOnTrial($query)
+    {
+        return $query->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '>', now());
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->whereNotNull('ends_at');
+    }
+
+    public function scopeForPlan($query, string $plan)
+    {
+        return $query->where('iyzico_plan', $plan);
     }
 }
