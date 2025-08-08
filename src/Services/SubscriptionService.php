@@ -120,7 +120,7 @@ class SubscriptionService
         $request->setResetRecurrenceCount(true);
         $request->setUseTrial(false);
         $request->setNewPricingPlanReferenceCode($newPricingPlanReferenceCode);
-        $request->setUpgradePeriod(now());
+        $request->setUpgradePeriod("NOW");
 
         return SubscriptionUpgrade::update($request, $this->options);
     }
