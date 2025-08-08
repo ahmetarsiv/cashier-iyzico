@@ -6,6 +6,7 @@ use Codenteq\Iyzico\Enums\SubscriptionStatusEnum;
 use Iyzipay\IyzipayResource;
 use Iyzipay\Model\Customer;
 use Iyzipay\Model\PaymentCard;
+use Iyzipay\Model\Subscription\RetrieveList;
 use Iyzipay\Model\Subscription\SubscriptionActivate;
 use Iyzipay\Model\Subscription\SubscriptionCancel;
 use Iyzipay\Model\Subscription\SubscriptionCreate;
@@ -18,6 +19,7 @@ use Iyzipay\Request\Subscription\SubscriptionCancelRequest;
 use Iyzipay\Request\Subscription\SubscriptionCreateRequest;
 use Iyzipay\Request\Subscription\SubscriptionDetailsRequest;
 use Iyzipay\Request\Subscription\SubscriptionRetryRequest;
+use Iyzipay\Request\Subscription\SubscriptionSearchRequest;
 use Iyzipay\Request\Subscription\SubscriptionUpgradeRequest;
 
 class SubscriptionService
@@ -149,5 +151,26 @@ class SubscriptionService
         $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
 
         return SubscriptionDetails::retrieve($request, $this->options);
+    }
+
+    /**
+     * List a subscriptions.
+     *
+     * @throws \Exception
+     */
+    public function search(array $data): RetrieveList
+    {
+        $request = new SubscriptionSearchRequest();
+        $request->setSubscriptionReferenceCode($data['subscription_reference_code']);
+        $request->setCount($data['count'] ?? 10);
+        $request->setPage($data['page'] ?? 1);
+        $request->setEndDate($data['end_date']);
+        $request->setStartDate($data['start_date']);
+        $request->setSubscriptionStatus($data['status']);
+        $request->setPricingPlanReferenceCode($data['pricing_plan_reference_code']);
+        $request->setCustomerReferenceCode($data['customer_reference_code']);
+        $request->setParentReferenceCode($data['parent_reference_code']);
+
+        return RetrieveList::subscriptions($request, $this->options);
     }
 }
