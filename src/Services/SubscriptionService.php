@@ -9,6 +9,7 @@ use Iyzipay\Model\PaymentCard;
 use Iyzipay\Model\Subscription\RetrieveList;
 use Iyzipay\Model\Subscription\SubscriptionActivate;
 use Iyzipay\Model\Subscription\SubscriptionCancel;
+use Iyzipay\Model\Subscription\SubscriptionCardUpdate;
 use Iyzipay\Model\Subscription\SubscriptionCreate;
 use Iyzipay\Model\Subscription\SubscriptionDetails;
 use Iyzipay\Model\Subscription\SubscriptionRetry;
@@ -16,6 +17,7 @@ use Iyzipay\Model\Subscription\SubscriptionUpgrade;
 use Iyzipay\Options;
 use Iyzipay\Request\Subscription\SubscriptionActivateRequest;
 use Iyzipay\Request\Subscription\SubscriptionCancelRequest;
+use Iyzipay\Request\Subscription\SubscriptionCardUpdateWithSubscriptionReferenceCodeRequest;
 use Iyzipay\Request\Subscription\SubscriptionCreateRequest;
 use Iyzipay\Request\Subscription\SubscriptionDetailsRequest;
 use Iyzipay\Request\Subscription\SubscriptionRetryRequest;
@@ -172,5 +174,20 @@ class SubscriptionService
         $request->setParentReferenceCode($data['parent_reference_code']);
 
         return RetrieveList::subscriptions($request, $this->options);
+    }
+
+    /**
+     * Update a subscription card.
+     *
+     * @throws \Exception
+     */
+    public function cardUpdate(string $subscriptionReferenceCode, string $callbackUrl): SubscriptionCardUpdate
+    {
+        $request = new SubscriptionCardUpdateWithSubscriptionReferenceCodeRequest();
+
+        $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
+        $request->setCallBackUrl($callbackUrl);
+
+        return SubscriptionCardUpdate::updateWithSubscriptionReferenceCode($request, $this->options);
     }
 }
