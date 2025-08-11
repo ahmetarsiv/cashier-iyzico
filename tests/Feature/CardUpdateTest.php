@@ -5,6 +5,8 @@ namespace Codenteq\Iyzico\Tests\Feature;
 use App\Models\User;
 use Codenteq\Iyzico\Enums\PaymentIntervalEnum;
 use Codenteq\Iyzico\Enums\SubscriptionStatusEnum;
+use Codenteq\Iyzico\Models\Subscription;
+use Codenteq\Iyzico\Services\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Iyzipay\Model\Subscription\SubscriptionPricingPlan;
 use Iyzipay\Model\Subscription\SubscriptionProduct;
@@ -13,7 +15,7 @@ use Iyzipay\Request\Subscription\SubscriptionCreatePricingPlanRequest;
 use Iyzipay\Request\Subscription\SubscriptionCreateProductRequest;
 use Tests\TestCase;
 
-class CancelSubscriptionTest extends TestCase
+class CardUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -53,7 +55,7 @@ class CancelSubscriptionTest extends TestCase
         $this->paymentPlan = SubscriptionPricingPlan::create($paymentPlanRequest, $this->options);
     }
 
-    public function test_user_can_cancel_subscription()
+    public function test_user_can_card_update_subscription()
     {
         $user = User::factory()->create();
 
@@ -92,8 +94,11 @@ class CancelSubscriptionTest extends TestCase
                 ],
             ]);
 
-        $subscription->cancel();
+        $subscriptionService = new SubscriptionService();
 
-        $this->assertTrue($subscription->cancelled());
+        $response = $subscriptionService->cardUpdate($subscription->iyzico_id);
+
+        $this->assertSame($response->getStatus(), 'success');
+        $this->assertTrue($user->subscribed($this->product->getName()));
     }
 }

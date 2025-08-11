@@ -2,7 +2,7 @@
 
 namespace Codenteq\Iyzico\Services;
 
-use Codenteq\Iyzico\Enums\SubscriptionStatusEnum;
+use Codenteq\Iyzico\Enums\UpgradePeriodEnum;
 use Iyzipay\IyzipayResource;
 use Iyzipay\Model\Customer;
 use Iyzipay\Model\PaymentCard;
@@ -50,7 +50,7 @@ class SubscriptionService
     {
         $request = new SubscriptionCreateRequest;
         $request->setPricingPlanReferenceCode($data['pricing_plan_reference_code']);
-        $request->setSubscriptionInitialStatus(SubscriptionStatusEnum::PENDING->value);
+        $request->setSubscriptionInitialStatus($data['status']);
 
         $customer = new Customer;
         $customer->setName($data['customer']['name']);
@@ -117,14 +117,14 @@ class SubscriptionService
      *
      * @throws \Exception
      */
-    public function upgrade(string $subscriptionReferenceCode, string $newPricingPlanReferenceCode): SubscriptionUpgrade
+    public function upgrade(string $subscriptionReferenceCode, bool $resetRecurrenceCount, bool $useTrial, string $newPricingPlanReferenceCode, UpgradePeriodEnum $upgradePeriod): SubscriptionUpgrade
     {
         $request = new SubscriptionUpgradeRequest;
         $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
-        $request->setResetRecurrenceCount(true);
-        $request->setUseTrial(false);
+        $request->setResetRecurrenceCount($resetRecurrenceCount);
+        $request->setUseTrial($useTrial);
         $request->setNewPricingPlanReferenceCode($newPricingPlanReferenceCode);
-        $request->setUpgradePeriod("NOW");
+        $request->setUpgradePeriod($upgradePeriod->toString());
 
         return SubscriptionUpgrade::update($request, $this->options);
     }
@@ -181,12 +181,12 @@ class SubscriptionService
      *
      * @throws \Exception
      */
-    public function cardUpdate(string $subscriptionReferenceCode, string $callbackUrl): SubscriptionCardUpdate
+    public function cardUpdate(string $subscriptionReferenceCode): SubscriptionCardUpdate
     {
         $request = new SubscriptionCardUpdateWithSubscriptionReferenceCodeRequest();
 
         $request->setSubscriptionReferenceCode($subscriptionReferenceCode);
-        $request->setCallBackUrl($callbackUrl);
+        $request->setCallBackUrl(config('cashier.iyzico.card_update_callback_url'));
 
         return SubscriptionCardUpdate::updateWithSubscriptionReferenceCode($request, $this->options);
     }

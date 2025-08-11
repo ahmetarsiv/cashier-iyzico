@@ -5,6 +5,7 @@ namespace Codenteq\Iyzico\Models;
 use Carbon\Carbon;
 use Codenteq\Iyzico\Cashier;
 use Codenteq\Iyzico\Enums\SubscriptionStatusEnum;
+use Codenteq\Iyzico\Enums\UpgradePeriodEnum;
 use Codenteq\Iyzico\Services\SubscriptionService;
 use Codenteq\Iyzico\Exceptions\SubscriptionException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -119,10 +120,10 @@ class Subscription extends Model
         );
     }
 
-    public function upgrade(string $newPricingPlanReferenceCode): bool
+    public function upgrade(bool $resetRecurrenceCount, bool $useTrial, string $newPricingPlanReferenceCode, UpgradePeriodEnum $upgradePeriod): bool
     {
         return $this->executeIyzicoAction(
-            fn() => $this->subscriptionService->upgrade($this->iyzico_id, $newPricingPlanReferenceCode)
+            fn() => $this->subscriptionService->upgrade($this->iyzico_id, $resetRecurrenceCount, $useTrial, $newPricingPlanReferenceCode, $upgradePeriod)
         );
     }
 

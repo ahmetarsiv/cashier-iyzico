@@ -4,6 +4,7 @@ namespace Codenteq\Iyzico\Tests\Feature;
 
 use App\Models\User;
 use Codenteq\Iyzico\Enums\PaymentIntervalEnum;
+use Codenteq\Iyzico\Enums\SubscriptionStatusEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Iyzipay\Model\Subscription\SubscriptionPricingPlan;
 use Iyzipay\Model\Subscription\SubscriptionProduct;
@@ -59,6 +60,7 @@ class DetailSubscriptionTest extends TestCase
         $subscription = $user->newSubscription($this->product->getName(), $this->paymentPlan->getName())
             ->create([
                 'pricing_plan_reference_code' => $this->paymentPlan->getReferenceCode(),
+                'status' => SubscriptionStatusEnum::ACTIVE->value,
                 'price' => $this->paymentPlan->getPrice(),
                 'customer' => [
                     'name' => 'Ahmet Sefa',
