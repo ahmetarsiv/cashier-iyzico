@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Codenteq\Iyzico\Models\Subscription;
 use Codenteq\Iyzico\Exceptions\SubscriptionException;
 use Illuminate\Database\Eloquent\Model;
+use Iyzipay\Model\Subscription\SubscriptionCreate;
 
 class SubscriptionBuilder
 {
@@ -192,7 +193,7 @@ class SubscriptionBuilder
     /**
      * Create subscription database record.
      */
-    private function createSubscriptionRecord($response, array $data): Subscription
+    private function createSubscriptionRecord(SubscriptionCreate $response, array $data): Subscription
     {
         $subscriptionData = [
             'name' => $this->name,
@@ -208,6 +209,12 @@ class SubscriptionBuilder
         if (!empty($this->metadata)) {
             $subscriptionData['metadata'] = json_encode($this->metadata);
         }
+
+        $this->owner->iyzico_id = $subscriptionData['iyzico_id'];
+        $this->owner->pm_last_four = "0000";
+        $this->owner->trial_ends_at = $subscriptionData['trial_ends_at'];
+
+        $this->owner->save();
 
         return $this->owner->subscriptions()->create($subscriptionData);
     }
